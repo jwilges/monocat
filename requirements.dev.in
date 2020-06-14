@@ -1,0 +1,10 @@
+-c requirements.txt
+coverage
+invoke
+mypy
+pylint
+pytest
+pytest-subtests
+sphinx
+sphinx-autobuild
+sphinx_rtd_theme
