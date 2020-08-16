@@ -46,15 +46,28 @@ except ImportError:
 
 class AddMetadataCommand(distutils.cmd.Command):
     description = 'Add `__metadata__` module'
-    user_options = []
+    user_options = [
+        ('local=', None, 'enable local version label'),
+    ]
 
     def initialize_options(self):
-        pass
+        self.local = None
 
     def finalize_options(self):
-        pass
+        self.local = 'local'
 
     def run(self):
+        if self.local:
+            try:
+                git_process = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'],
+                                             check=False, capture_output=True, universal_newlines=True)
+            except OSError:
+                pass
+            else:
+                if git_process.returncode == 0:
+                    self.local = git_process.stdout.strip()
+
+            METADATA['version'] += f'+{self.local}'
         with open(PACKAGE_PATH / '__metadata__.py', 'w') as metadata_module:
             metadata_module.writelines([f"__{key}__ = '{value}'\n" for key, value in METADATA.items()])
 
