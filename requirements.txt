@@ -4,6 +4,6 @@
 #
 #    pip-compile
 #
-pydantic==1.5.1           # via monocat (setup.py)
+pydantic==1.6.1           # via monocat (setup.py)
 uritemplate==3.0.1        # via monocat (setup.py)
-urllib3==1.25.9           # via monocat (setup.py)
+urllib3==1.25.10          # via monocat (setup.py)

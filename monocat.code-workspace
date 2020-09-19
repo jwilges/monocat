@@ -16,11 +16,14 @@
 			"**/*.py[cdo]": true
 		},
 		"python.venvPath": "${workspaceFolder}/.nox",
+		"python.pythonPath": "${workspaceFolder}/.nox/dev-3-8",
 		"python.workspaceSymbols.enabled": true,
+		"python.linting.enabled": true,
+		"python.linting.pylintEnabled": false,
+		"python.linting.mypyEnabled": true,
 		"python.testing.pytestEnabled": true,
 		"python.testing.pytestArgs": [
 			"tests"
-		],
-		"python.pythonPath": "${workspaceFolder}/.nox/dev-3-8"
+		]
 	}
 }

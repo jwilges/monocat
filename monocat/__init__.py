@@ -13,9 +13,9 @@ class ReleaseError(RuntimeError):
 
 class ReleaseManager:
     def __init__(self, owner: str, repository: str, interactive: bool):
-        self.interactive = interactive
         self.owner = owner
         self.repository = repository
+        self.interactive = interactive
         self.client = GitHubClient(owner, repository)
 
     def list_releases(self):

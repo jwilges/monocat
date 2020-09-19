@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from monocat._http import ContentType
+from monocat._http import ContentType, WebLink, WebLinkHeader
 
 
 class TestContentType(TestCase):
@@ -76,3 +76,24 @@ class TestContentType(TestCase):
         for subtest in subtests:
             with self.subTest(subtest=subtest):
                 assert str(subtest.content_type) == subtest.expected
+
+
+class TestWebLinkHeader(TestCase):
+    def test_links(self):
+        value = ('<https://api.github.com/repositories/251530846/releases?per_page=1&page=2>; rel="next", '
+                 '<https://api.github.com/repositories/251530846/releases?per_page=1&page=4>; rel="last", '
+                 '<http://localhost>; media="application/json;curveball"; anchor=unquoted')
+
+        link_header = WebLinkHeader.from_value(value)
+
+        assert len(link_header) == 3
+
+        assert link_header[0].url == 'https://api.github.com/repositories/251530846/releases?per_page=1&page=2'
+        assert link_header[0].params == {'rel': 'next'}
+        assert link_header[1].url == 'https://api.github.com/repositories/251530846/releases?per_page=1&page=4'
+        assert link_header[1].params == {'rel': 'last'}
+        assert link_header[2].url == 'http://localhost'
+        assert link_header[2].params == {'media': 'application/json;curveball', 'anchor': 'unquoted'}
+
+        assert link_header.rel('next').url == 'https://api.github.com/repositories/251530846/releases?per_page=1&page=2'
+        assert link_header.rel('last').url == 'https://api.github.com/repositories/251530846/releases?per_page=1&page=4'

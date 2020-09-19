@@ -18,6 +18,10 @@ This utility aims to make integrating GitHub release steps in CI/CD pipelines si
 ## Supported Platforms
 This utility is continuously unit tested on a GNU/Linux system with Python 3.6, 3.7, and 3.8.
 
+## Usage
+Use the `GITHUB_API` environment variable to specify alternate GitHub API URLs;
+the default value is [https://api.github.com](https://api.github.com).
+
 ## Prior Art
 This utility was inspired by the [`gothub`](https://github.com/itchio/gothub)
 utility from [itch.io](https://github.com/itchio). As their utility has been

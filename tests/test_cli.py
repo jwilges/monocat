@@ -1,9 +1,10 @@
 from contextlib import ExitStack
-from unittest.mock import MagicMock, patch
-from unittest.mock import DEFAULT as DEFAULT_MOCK
 from unittest import TestCase
+from unittest.mock import DEFAULT as DEFAULT_MOCK
+from unittest.mock import MagicMock, patch
 
 from monocat import cli
+
 
 class TestMain(TestCase):
     def test_verbosity_none_skips_log_configuration(self):

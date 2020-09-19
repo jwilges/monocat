@@ -28,6 +28,14 @@ def mypy(context):
     context.run('mypy monocat')
 
 
+@task(help={'upgrade': 'try to upgrade all dependencies to their latest versions'})
+def compile_requirements(context, upgrade = False):
+    """Compile requirements.txt and requirements.dev.txt from their .in specifications"""
+    arguments = '-U' if upgrade else ''
+    context.run(add_proxy_arguments(f'pip-compile {arguments}'))
+    context.run(add_proxy_arguments(f'pip-compile {arguments} requirements.dev.in'))
+
+
 def coverage_base(context, mode):
     context.run(add_proxy_arguments('coverage run -m pytest'))
     context.run(f'coverage {mode}')

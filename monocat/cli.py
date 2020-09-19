@@ -3,15 +3,15 @@ import argparse
 import logging
 import sys
 
-from monocat import ReleaseManager, ReleaseError
-from monocat.__metadata__ import __version__
+from monocat import ReleaseError, ReleaseManager
+from monocat.__metadata__ import DESCRIPTION, VERSION
 
 _logger = logging.getLogger(__name__)
 
 
 def _parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.partition('\n')[0])
-    parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {VERSION}')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', '-v', dest='verbosity', action='count', default=0,
                        help='increase output verbosity')

@@ -1,6 +1,7 @@
 -c requirements.txt
 coverage
 invoke
+isort
 mypy
 pylint
 pytest

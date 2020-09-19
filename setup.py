@@ -1,11 +1,11 @@
 import codecs
+import distutils
 import importlib
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-import distutils
 import setuptools
 import setuptools.command.build_py
 
@@ -13,7 +13,7 @@ import setuptools.command.build_py
 def read(source_file_name: Path):
     if not source_file_name.is_file():
         raise FileNotFoundError(source_file_name)
-    with codecs.open(source_file_name, 'r') as source_file:
+    with codecs.open(str(source_file_name), 'r') as source_file:
         return source_file.read()
 
 
@@ -69,7 +69,7 @@ class AddMetadataCommand(distutils.cmd.Command):
 
             METADATA['version'] += f'+{self.local}'
         with open(PACKAGE_PATH / '__metadata__.py', 'w') as metadata_module:
-            metadata_module.writelines([f"__{key}__ = '{value}'\n" for key, value in METADATA.items()])
+            metadata_module.writelines([f"{key.upper()} = '{value}'\n" for key, value in METADATA.items()])
 
 
 class BuildMetadataCommand(setuptools.command.build_py.build_py):
