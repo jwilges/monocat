@@ -22,7 +22,7 @@ class ContentType:
     def __str__(self) -> str:
         mime_type = f'{self.type}/{self.subtype}'
         if self.attribute or self.value:
-            return f'{mime_type}; {"=".join((self.attribute, self.value))}'
+            return f'{mime_type}; {"=".join(operand for operand in (self.attribute, self.value) if operand)}'
         return mime_type
 
     def charset(self, default: str = 'UTF-8') -> str:

@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import List, MutableMapping, Optional, Sequence, Type
 
 import setuptools
 import setuptools.command.build_py
@@ -26,13 +27,14 @@ METADATA = {
     'version': '0.5.0',
     'author': 'Jeffrey Wilges',
     'author_email': 'jeffrey@wilges.com',
-    'description': 'monocat is a command line utility to manage GitHub releases',
+    'description': 'monocat is a command line utility for managing GitHub releases',
     'url': 'https://github.com/jwilges/monocat',
     'license': 'BSD'
 }
 
-OPTIONAL_COMMAND_CLASSES = {}
-OPTIONAL_COMMAND_OPTIONS = {}
+OPTIONAL_COMMAND_CLASSES: MutableMapping[str, Type] = {}
+OPTIONAL_COMMAND_OPTIONS: MutableMapping[str, MutableMapping[str, Sequence[str]]] = {}
+
 try:
     from sphinx.setup_command import BuildDoc
     OPTIONAL_COMMAND_CLASSES['build_sphinx'] = BuildDoc
@@ -82,7 +84,7 @@ class ValidateTagCommand(distutils.cmd.Command):
     """A validator that ensures the package version both is in the canonical forma per
     PEP-440 and matches the current git tag"""
     description = 'validate that the package version matches the current git tag'
-    user_options = []
+    user_options: List[Optional[str]] = []
 
     def initialize_options(self):
         pass
@@ -123,7 +125,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(exclude=['tests*']),
     entry_points={
-        'console_scripts': ['github-release-manager=monocat.cli:main'],
+        'console_scripts': ['monocat=monocat.cli:main'],
     },
     python_requires='>=3.6',
     install_requires=[

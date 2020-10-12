@@ -1,14 +1,16 @@
 import json
 import logging
+import mimetypes
 import os
 from base64 import b64encode
 from datetime import datetime
+from http import HTTPStatus
 from typing import List, Mapping, Optional, Union
 from urllib.parse import ParseResult, urlparse
 
 import uritemplate
 import urllib3
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 
 import monocat.__metadata__
 from monocat._http import ContentType
@@ -36,9 +38,9 @@ class AssetResponse(BaseModel):
 
 class ReleaseRequest(BaseModel):
     tag_name: str
-    target_commitish: str
-    name: str
-    body: str
+    target_commitish: Optional[str] = ''
+    name: Optional[str] = ''
+    body: Optional[str] = ''
     draft: Optional[bool] = False
     prerelease: Optional[bool] = False
 
@@ -53,15 +55,30 @@ class ReleaseResponse(BaseModel):
     id: int
     tag_name: str
     target_commitish: str
-    name: str
-    body: str
+    name: Optional[str] = None
+    body: Optional[str] = None
     draft: bool
     prerelease: bool
     created_at: datetime
     published_at: Optional[datetime] = None
+    assets: List[AssetResponse] = Field(default_factory=lambda: [])
+
+
+class GitHubClientError(RuntimeError):
+    http_status: HTTPStatus
+    http_reason: str
+
+    def __init__(self, http_status: HTTPStatus, http_reason: str, *args):
+        super().__init__(*args)
+        self.http_status = http_status
+        self.http_reason = http_reason
 
 
 class GitHubClient:
+    # TODO: This client does not yet paginate responses from multiple-response GitHub API endpoints.
+    #       However, the existing `monocat.WebLinkHeader` implementation may be used for pagination
+    #       based on the content of the Link header.
+    #       See: <https://developer.github.com/v3/#pagination>
     API_BASE_URL = os.environ.get('GITHUB_API', 'https://api.github.com')
     API_BODY_ENCODING = 'utf-8'
     _logger = logging.getLogger(__name__)
@@ -101,10 +118,19 @@ class GitHubClient:
 
         response = self.http.request(method, self._resolve_url(url), headers=headers, body=body)
         content_type = ContentType.from_response(response)
+
         if content_type.is_json():
-            return json.loads(response.data.decode(content_type.charset(default=self.API_BODY_ENCODING).lower()))
+            content = json.loads(response.data.decode(content_type.charset(default=self.API_BODY_ENCODING).lower()))
         else:
-            return response.data.decode(content_type.charset(default=self.API_BODY_ENCODING).lower())
+            content = response.data.decode(content_type.charset(default=self.API_BODY_ENCODING).lower())
+
+        self._logger.debug('GitHub API request: %s <%s>\nGitHub API response (status: %s; content type: %s):\n%s',
+                           method, url, HTTPStatus(response.status), content_type, content)
+
+        if response.status >= 400:
+            raise GitHubClientError(response.status, response.reason, content)
+
+        return content
 
     def _get(self, url: str, fields: Optional[Mapping[str, str]] = None):
         return self._request('GET', url, fields=fields)
@@ -119,14 +145,31 @@ class GitHubClient:
         # See: <https://docs.github.com/en/rest/reference/repos#list-releases>
         # GET /repos/{owner}/{repo}/releases
         responses = [ReleaseResponse.parse_obj(r) for r in self._get(f'/repos/{self.owner}/{self.repository}/releases')]
-        self._logger.info('Releases: %s', responses)
+        self._logger.debug('Releases: %s', responses)
         return responses
 
-    def get_release_by_tag_name(self, tag: str) -> ReleaseResponse:
+    def get_release(self, release_id: str) -> Optional[ReleaseResponse]:
+        # See: <https://docs.github.com/en/rest/reference/repos#get-a-release>
+        # GET /repos/{owner}/{repo}/releases/{release_id}
+        response: Optional[ReleaseResponse]
+        try:
+            response = ReleaseResponse.parse_obj(self._get(f'/repos/{self.owner}/{self.repository}/releases/{release_id}'))
+        except GitHubClientError as e:
+            if e.http_status != HTTPStatus.NOT_FOUND:
+                raise
+            response = None
+        return response
+
+    def get_release_by_tag(self, tag: str) -> Optional[ReleaseResponse]:
         # See: <https://docs.github.com/en/rest/reference/repos#get-a-release-by-tag-name>
         # GET /repos/{owner}/{repo}/releases/tags/{tag}
-        response = ReleaseResponse.parse_obj(self._get(f'/repos/{self.owner}/{self.repository}/releases/tags/{tag}'))
-        self._logger.info('Release: %s', response)
+        response: Optional[ReleaseResponse]
+        try:
+            response = ReleaseResponse.parse_obj(self._get(f'/repos/{self.owner}/{self.repository}/releases/tags/{tag}'))
+        except GitHubClientError as e:
+            if e.http_status != HTTPStatus.NOT_FOUND:
+                raise
+            response = None
         return response
 
     def create_release(self, release: ReleaseRequest) -> ReleaseResponse:
@@ -135,24 +178,23 @@ class GitHubClient:
         response = ReleaseResponse.parse_obj(
             self._post(f'/repos/{self.owner}/{self.repository}/releases',
                        body=release.json(exclude_unset=True)))
-        self._logger.info('Created Release: %s', response)
+        self._logger.debug('Created Release: %s', response)
         return response
 
-    def update_release(self, release: ReleaseRequest) -> ReleaseResponse:
+    def update_release(self, release: ReleaseRequest, release_id: int) -> ReleaseResponse:
         # See: <https://docs.github.com/en/rest/reference/repos#update-a-release>
         # PATCH /repos/{owner}/{repo}/releases/{release_id}
-        release_id = self.get_release_by_tag_name(release.tag_name).id
         response = ReleaseResponse.parse_obj(
             self._patch(f'/repos/{self.owner}/{self.repository}/releases/{release_id!s}',
                         body=release.json(exclude_unset=True)))
-        self._logger.info('Updated Release: %s', response)
+        self._logger.debug('Updated Release: %s', response)
         return response
 
     def list_assets(self, release: ReleaseResponse) -> List[AssetResponse]:
         # See: <https://docs.github.com/en/rest/reference/repos#list-release-assets>
         # GET /repos/{owner}/{repo}/releases/{release_id}/assets
         responses = [AssetResponse.parse_obj(r) for r in self._get(release.assets_url)]
-        self._logger.info('Assets: %s', responses)
+        self._logger.debug('Assets: %s', responses)
         return responses
 
     def get_asset(self, release: ReleaseResponse, asset_id: int) -> AssetResponse:
@@ -160,23 +202,26 @@ class GitHubClient:
         # GET /repos/{owner}/{repo}/releases/{release_id}/assets
         response = AssetResponse.parse_obj(
             self._get(f'{release.assets_url}/{asset_id!s}'))
-        self._logger.info('Asset: %s', response)
+        self._logger.debug('Asset: %s', response)
         return response
 
-    def update_asset(self, asset_id: int) -> AssetResponse:
+    def update_asset(self, asset_id: int, asset: AssetRequest) -> AssetResponse:
         # See: <https://docs.github.com/en/rest/reference/repos#update-a-release-asset>
         # PATCH /repos/{owner}/{repo}/releases/assets/:asset_id
         response = AssetResponse.parse_obj(
-            self._patch(f'/repos/{self.owner}/{self.repository}/releases/assets/{asset_id!s}'))
-        self._logger.info('Updated Asset: %s', response)
+            self._patch(f'/repos/{self.owner}/{self.repository}/releases/assets/{asset_id!s}',
+                        body=asset.json(exclude_unset=True)))
+        self._logger.debug('Updated Asset: %s', response)
         return response
 
-    def upload_asset(self, upload_url: str, asset: AssetRequest, body: bytes, content_type: str) -> AssetResponse:
+    def upload_asset(self, upload_url: str, asset: AssetRequest, body: bytes, content_type: Optional[str] = None) -> AssetResponse:
         # See: <https://docs.github.com/en/rest/reference/repos#upload-a-release-asset>
         # POST {upload_base_url}/repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}
+        if not content_type:
+            content_type = mimetypes.guess_type(asset.name)[0] or 'application/octet-stream'
         response = AssetResponse.parse_obj(
             self._post(uritemplate.expand(upload_url, **asset.dict(exclude_unset=True)),
                        headers={'Content-Type': content_type},
                        body=body))
-        self._logger.info('Created Asset: %s', response)
+        self._logger.debug('Created Asset: %s', response)
         return response
