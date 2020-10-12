@@ -1,7 +1,17 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Sequence
 
-from monocat import ReleaseManager, ReleaseRequest
+from pydantic import BaseModel
+
+from monocat import ReleaseManager
+from monocat.github import AssetResponse, ReleaseRequest, ReleaseResponse
+
+
+class CommandLineUpdateReleaseResponse(BaseModel):
+    release: ReleaseResponse
+    new_assets: Sequence[AssetResponse]
+
 
 class Action(ABC):
     name: str
@@ -13,6 +23,7 @@ class Action(ABC):
 
     @abstractmethod
     def __call__(self, argument_parser, arguments) -> bool: ...
+
 
 class GetReleaseAction(Action):
     name: str = 'get-release'
@@ -28,9 +39,10 @@ class GetReleaseAction(Action):
             if arguments.output_id:
                 self._logger.info('%s', release.id)
             else:
-                self._logger.info('Release:\n%s', release.json(indent=2))
+                self._logger.info('%s', release.json(indent=2))
 
         return bool(release)
+
 
 class UpdateReleaseAction(Action):
     name: str = 'update-release'
@@ -65,9 +77,11 @@ class UpdateReleaseAction(Action):
         if arguments.output_id:
             self._logger.info('%s', release.id)
         else:
-            self._logger.info('Release:\n%s', release.json(indent=2))
-            for asset in assets:
-                self._logger.info('Uploaded Artifact:\n%s', asset.json(indent=2))
+            self._logger.info('%s',
+                CommandLineUpdateReleaseResponse(
+                    release=release,
+                    new_assets=assets
+                ).json(indent=2))
 
         all_uploads_successful = len(assets) == len(arguments.artifacts)
         if not all_uploads_successful:
