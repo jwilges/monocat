@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from typing import ClassVar, List, Mapping, Optional, Pattern
@@ -37,7 +35,7 @@ class ContentType:
         return f'{self.type}/{self.subtype}'.lower() == 'application/json'
 
     @classmethod
-    def from_response(cls, response: urllib3.response.HTTPResponse) -> ContentType:
+    def from_response(cls, response: urllib3.response.HTTPResponse):
         content_type = response.getheader('Content-Type', '')
         content_type_match = cls.FORMAT.match(content_type)
         if not content_type_match:
@@ -72,7 +70,7 @@ class WebLinkHeader:
         return None
 
     @classmethod
-    def from_value(cls, value: str) -> WebLinkHeader:
+    def from_value(cls, value: str):
         links = []
         link_matches = list(re.finditer(r'(?:, *)?<(?P<url>[^>]+)>(?:; *)?', value))
         last_link_match = len(link_matches) - 1
@@ -95,5 +93,5 @@ class WebLinkHeader:
         return WebLinkHeader(links=links)
 
     @classmethod
-    def from_response(cls, response: urllib3.response.HTTPResponse) -> WebLinkHeader:
+    def from_response(cls, response: urllib3.response.HTTPResponse):
         return cls.from_value(response.headers.get('Link'))

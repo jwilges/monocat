@@ -22,7 +22,7 @@ class TestConfigureLogging(TestCase):
             cli._configure_logging(expected_verbosity_argument)
 
             mock_logging['basicConfig'].assert_called_once()
-            mock_basic_config_kwargs = mock_logging['basicConfig'].mock_calls[0].kwargs
+            mock_basic_config_kwargs = mock_logging['basicConfig'].mock_calls[0][2]
             assert isinstance(mock_basic_config_kwargs['handlers'][0], logging.NullHandler)
 
     def test_verbosity_nonzero_configures_logging(self):
@@ -38,7 +38,7 @@ class TestConfigureLogging(TestCase):
             cli._configure_logging(expected_verbosity_argument)
 
             mock_logging['basicConfig'].assert_called_once()
-            mock_basic_config_kwargs = mock_logging['basicConfig'].mock_calls[0].kwargs
+            mock_basic_config_kwargs = mock_logging['basicConfig'].mock_calls[0][2]
 
             assert mock_basic_config_kwargs['level'] == expected_verbosity
 

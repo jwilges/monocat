@@ -1,0 +1,55 @@
+trigger:
+  - master
+  - staging
+  - feature/*
+
+resources:
+  containers:
+    - container: python36
+      image: python:3.6-slim
+    - container: python37
+      image: python:3.7-slim
+    - container: python38
+      image: python:3.8-slim
+
+jobs:
+- job: python_test
+  displayName: Test
+  pool:
+    vmImage: 'ubuntu-18.04'
+  strategy:
+    matrix:
+      'Python 3.6':
+        container: python36
+      'Python 3.7':
+        container: python37
+      'Python 3.8':
+        container: python38
+  container: $[ variables['container'] ]
+  steps:
+  - script: |
+      export PATH=~/.local/bin:$PATH
+      pip install --user -r requirements.dev.txt
+      python setup.py add_metadata
+      pip install --user -c requirements.txt .
+    displayName: 'Install dependencies'
+  - script: |
+      export PATH=~/.local/bin:$PATH
+      invoke coverage-xml -- --junitxml=junit/test-results.xml
+      invoke coverage-html --no-run
+    displayName: 'Run tests and generate code coverage results'
+  - task: PublishTestResults@2
+    displayName: 'Publish test results for Python $(python.version)'
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'junit/test-results.xml'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Publish test results for Python $(python.version)'
+  - task: PublishCodeCoverageResults@1
+    displayName: 'Publish code coverage results for Python $(python.version)'
+    inputs:
+      codeCoverageTool: Cobertura
+      pathToSources: $(System.DefaultWorkingDirectory)
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/coverage-html'
