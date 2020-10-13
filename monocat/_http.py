@@ -12,7 +12,9 @@ class ContentType:
     """An HTTP Content Type based on the RFC 1521 definition in Section 4: The Content-Type Header Field
 
     See: <https://tools.ietf.org/html/rfc1521#page-9>"""
-    FORMAT: ClassVar[Pattern] = re.compile(r'^(?P<type>[^/\s]+)/(?P<subtype>[^;\s]+)(?:\s*;\s*(?P<attribute>[^=]+)=(?P<value>.+))?$')
+    FORMAT: ClassVar[Pattern] = re.compile(
+        r'^(?P<type>[^/\s]+)/(?P<subtype>[^;\s]+)(?:\s*;\s*(?P<attribute>[^=]+)=(?P<value>.+))?$'
+    )
 
     type: str
     subtype: str
@@ -26,7 +28,10 @@ class ContentType:
         return mime_type
 
     def charset(self, default: str = 'UTF-8') -> str:
-        return self.value if self.attribute and self.attribute.lower() == 'charset' and self.value else default.upper()
+        return (
+            self.value if self.attribute and self.attribute.lower() == 'charset' and self.value else
+            default.upper()
+        )
 
     def is_json(self) -> bool:
         return f'{self.type}/{self.subtype}'.lower() == 'application/json'
@@ -70,14 +75,20 @@ class WebLinkHeader:
     def from_value(cls, value: str) -> WebLinkHeader:
         links = []
         link_matches = list(re.finditer(r'(?:, *)?<(?P<url>[^>]+)>(?:; *)?', value))
-        last_link_match = len(link_matches) -  1
+        last_link_match = len(link_matches) - 1
         for i, link_match in enumerate(link_matches):
             next_link_match = link_matches[i + 1] if i < last_link_match else None
             params = value[link_match.end():next_link_match.start() if next_link_match else None]
-            params_matches = re.finditer(r'(?:; *)?(?P<key>[^=]+)=(?P<value>(?:\"[^\"]+\"|[^;]+)?)', params)
+            params_matches = re.finditer(
+                r'(?:; *)?(?P<key>[^=]+)=(?P<value>(?:\"[^\"]+\"|[^;]+)?)', params
+            )
             link = WebLink(
                 url=link_match['url'],
-                params={param['key']: param['value'].strip(' "') for param in params_matches if param})
+                params={
+                    param['key']: param['value'].strip(' "')
+                    for param in params_matches if param
+                }
+            )
 
             links.append(link)
 

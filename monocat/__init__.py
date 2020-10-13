@@ -37,7 +37,8 @@ class ReleaseManager:
     def update_release(self, request: ReleaseRequest, release_id: int) -> ReleaseResponse:
         return self.client.update_release(request, release_id)
 
-    def upload_assets(self, release: ReleaseResponse, artifacts: Sequence[os.PathLike]) -> Sequence[AssetResponse]:
+    def upload_assets(self, release: ReleaseResponse,
+                      artifacts: Sequence[os.PathLike]) -> Sequence[AssetResponse]:
         response = []
         existing_asset_ids_by_name = {asset.name: asset.id for asset in release.assets}
         artifact_paths = [Path(artifact) for artifact in artifacts]
@@ -49,7 +50,7 @@ class ReleaseManager:
                 if not asset_id:
                     response.append(
                         self.client.upload_asset(
-                            upload_url=release.upload_url,
-                            asset=asset,
-                            body=artifact_file.read()))
+                            upload_url=release.upload_url, asset=asset, body=artifact_file.read()
+                        )
+                    )
         return response

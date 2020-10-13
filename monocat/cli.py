@@ -5,15 +5,14 @@ import sys
 from typing import Optional
 
 from monocat import ReleaseError, ReleaseManager
-from monocat.actions import UpdateReleaseAction, GetReleaseAction
 from monocat.__metadata__ import DESCRIPTION, VERSION
+from monocat.actions import GetReleaseAction, UpdateReleaseAction
 
 _logger = logging.getLogger(__name__)
 
 
 class MaximumLogLevelLogFilter(logging.Filter):
     """A log filter to omit records greater or equal to a specified log level."""
-
     def __init__(self, maximum_level: int, name: str = ''):
         super().__init__(name=name)
         self.maximum_level = maximum_level
@@ -22,6 +21,7 @@ class MaximumLogLevelLogFilter(logging.Filter):
         return record.levelno < self.maximum_level
 
 
+# yapf: disable
 def _parse_update_release_arguments(root_subparsers):
     update_release_parser = root_subparsers.add_parser(UpdateReleaseAction.name, description=UpdateReleaseAction.description)
 
@@ -87,6 +87,7 @@ def _parse_arguments():
     return root_parser, root_parser.parse_args()
 
 
+# yapf: enable
 def _configure_logging(verbosity: Optional[int]):
     if verbosity is not None:
         console_level = max(1, logging.INFO - (10 * verbosity))
@@ -99,13 +100,10 @@ def _configure_logging(verbosity: Optional[int]):
         error_handler = logging.StreamHandler(sys.stderr)
         error_handler.setFormatter(error_formatter)
         error_handler.setLevel(logging.WARNING)
-        logging.basicConfig(
-            handlers=(console_handler, error_handler),
-            level=console_level)
+        logging.basicConfig(handlers=(console_handler, error_handler), level=console_level)
         _logger.setLevel(console_level)
     else:
-        logging.basicConfig(
-            handlers=(logging.NullHandler(),))
+        logging.basicConfig(handlers=(logging.NullHandler(), ))
 
 
 def main():
@@ -115,13 +113,12 @@ def main():
     _configure_logging(arguments.verbosity)
 
     try:
-        release_manager = ReleaseManager(arguments.owner, arguments.repository, interactive=arguments.interactive)
+        release_manager = ReleaseManager(
+            arguments.owner, arguments.repository, interactive=arguments.interactive
+        )
         actions = {
-            action.name: action(release_manager) for action in
-            (
-                UpdateReleaseAction,
-                GetReleaseAction
-            )
+            action.name: action(release_manager)
+            for action in (UpdateReleaseAction, GetReleaseAction)
         }
         response = actions[arguments.action](argument_parser, arguments)
         sys.exit(0 if response else 1)
