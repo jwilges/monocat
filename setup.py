@@ -72,7 +72,6 @@ class AddMetadataCommand(distutils.cmd.Command):
             METADATA['version'] += f'+{identifier}'
 
         METADATA_PATH = Path(PACKAGE_PATH / '__metadata__.py')
-        print(f'--- metadata[{METADATA_PATH!s}]: {METADATA}')
 
         with open(METADATA_PATH, 'w') as metadata_module:
             metadata_module.writelines([f"{key.upper()} = '{value}'\n" for key, value in METADATA.items()])
