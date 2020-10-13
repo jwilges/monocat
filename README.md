@@ -7,6 +7,9 @@
 # monocat
 *`monocat`: a simple standalone command line interface for managing GitHub releases and release assets.*
 
+[![build](https://img.shields.io/azure-devops/build/jwilges/monocat/1/master)](https://jwilges.visualstudio.com/monocat/_build?definitionId=1)
+[![tests](https://img.shields.io/azure-devops/tests/jwilges/monocat/1/master?compact_message)](https://jwilges.visualstudio.com/monocat/_test/analytics?definitionId=1&contextType=build)
+![coverage](https://img.shields.io/azure-devops/coverage/jwilges/monocat/1/master)
 ![license](https://img.shields.io/github/license/jwilges/monocat)
 ![pypi python versions](https://img.shields.io/pypi/pyversions/monocat)
 [![pypi release](https://img.shields.io/pypi/v/monocat)](https://pypi.org/project/monocat)
