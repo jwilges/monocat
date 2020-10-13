@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/jwilges/monocat" title="monocat">
-    <img src="docs/logo-300px.png" alt="a monocat in a box" width="150px" height="150px">
+    <img src="https://raw.githubusercontent.com/jwilges/monocat/master/docs/logo-300px.png" alt="a monocat in a box" width="150px" height="150px">
   </a>
 </p>
 
