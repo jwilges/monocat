@@ -1,9 +1,8 @@
 """Command-line interface functionality for the Drover interface"""
 import argparse
 import logging
-import os
 import sys
-from typing import Optional, Sequence
+from typing import Optional
 
 from monocat import ReleaseError, ReleaseManager
 from monocat.actions import UpdateReleaseAction, GetReleaseAction
@@ -15,7 +14,8 @@ _logger = logging.getLogger(__name__)
 class MaximumLogLevelLogFilter(logging.Filter):
     """A log filter to omit records greater or equal to a specified log level."""
 
-    def __init__(self, maximum_level: int):
+    def __init__(self, maximum_level: int, name: str = ''):
+        super().__init__(name=name)
         self.maximum_level = maximum_level
 
     def filter(self, record):

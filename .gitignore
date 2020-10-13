@@ -13,6 +13,7 @@
 
 /build
 /dist
+/instance
 
 /monocat/__metadata__.py
 

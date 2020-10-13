@@ -104,8 +104,9 @@ class GitHubClient:
 
     def _request(self, method: str, url: str,
                  fields: Optional[Mapping[str, str]] = None,
-                 headers: Mapping[str, str] = {},
+                 headers: Mapping[str, str] = None,
                  body: Union[bytes, str, None] = None):
+        headers = headers if headers else {}
         if method in ('PATCH', 'POST', 'PUT'):
             headers = {
                 **self.base_headers,
@@ -116,7 +117,7 @@ class GitHubClient:
         else:
             headers = {**self.base_headers, **headers}
 
-        response = self.http.request(method, self._resolve_url(url), headers=headers, body=body)
+        response = self.http.request(method, self._resolve_url(url), fields=fields, headers=headers, body=body)
         content_type = ContentType.from_response(response)
 
         if content_type.is_json():
@@ -135,10 +136,10 @@ class GitHubClient:
     def _get(self, url: str, fields: Optional[Mapping[str, str]] = None):
         return self._request('GET', url, fields=fields)
 
-    def _patch(self, url: str, headers: Mapping[str, str] = {}, body: Union[bytes, str, None] = None):
+    def _patch(self, url: str, headers: Mapping[str, str] = None, body: Union[bytes, str, None] = None):
         return self._request('PATCH', url, headers=headers, body=body)
 
-    def _post(self, url: str, headers: Mapping[str, str] = {}, body: Union[bytes, str, None] = None):
+    def _post(self, url: str, headers: Mapping[str, str] = None, body: Union[bytes, str, None] = None):
         return self._request('POST', url, headers=headers, body=body)
 
     def list_releases(self) -> List[ReleaseResponse]:
