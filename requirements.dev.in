@@ -8,6 +8,7 @@ pip-tools
 pylint
 pytest
 pytest-subtests
+setuptools_scm
 sphinx
 sphinx-autobuild
 sphinx_rtd_theme

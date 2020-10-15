@@ -3,42 +3,69 @@ trigger:
   - staging
   - feature/*
 
-jobs:
-- job: python_test
-  displayName: Test
-  pool:
-    vmImage: 'ubuntu-18.04'
-  strategy:
-    matrix:
-      'Python 3.6':
-        python.version: '3.6'
-      'Python 3.7':
-        python.version: '3.7'
-      'Python 3.8':
-        python.version: '3.8'
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-  - script: |
-      pip install -r requirements.dev.txt
-      python setup.py add_metadata
-      pip install -c requirements.txt .
-    displayName: 'Install dependencies'
-  - script: |
-      invoke coverage-xml -- --junitxml=junit/test-results.xml
-      invoke coverage-html --no-run
-    displayName: 'Run tests and generate code coverage results'
-  - task: PublishTestResults@2
-    displayName: 'Publish test results for Python $(python.version)'
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFormat: 'JUnit'
-      testResultsFiles: 'junit/test-results.xml'
-      failTaskOnFailedTests: true
-      testRunTitle: 'Publish test results for Python $(python.version)'
-  - task: PublishCodeCoverageResults@1
-    displayName: 'Publish code coverage results for Python $(python.version)'
-    inputs:
-      codeCoverageTool: Cobertura
-      summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+stages:
+- stage:
+  displayName: Build
+  jobs:
+  - job:
+    displayName: 'Static Analysis'
+    pool:
+      vmImage: 'ubuntu-18.04'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.8'
+    - script: |
+        pip install -c requirements.dev.txt wheel
+        pip install -c requirements.dev.txt -r requirements.dev.in
+        python setup.py --version
+        pip install -c requirements.txt .
+      displayName: 'Install package and dependencies'
+    - script: |
+        invoke lint
+      displayName: 'Run pylint'
+    - script: |
+        invoke mypy
+      displayName: 'Run mypy'
+    - script: |
+        invoke bandit
+      displayName: 'Run bandit'
+  - job:
+    displayName: 'Run Tests:'
+    pool:
+      vmImage: 'ubuntu-18.04'
+    strategy:
+      matrix:
+        'Python 3.6':
+          python.version: '3.6'
+        'Python 3.7':
+          python.version: '3.7'
+        'Python 3.8':
+          python.version: '3.8'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+    - script: |
+        pip install -c requirements.dev.txt wheel
+        pip install -c requirements.dev.txt -r requirements.dev.in
+        python setup.py --version
+        pip install -c requirements.txt .
+      displayName: 'Install package and dependencies'
+    - script: |
+        invoke coverage-xml -- --junitxml="junit/test-results-$(python.version).xml"
+      displayName: 'Run tests and generate code coverage results'
+    - task: PublishTestResults@2
+      displayName: 'Publish test results for Python $(python.version)'
+      condition: succeededOrFailed()
+      inputs:
+        testRunTitle: 'Python $(python.version)'
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'junit/test-results-$(python.version).xml'
+        failTaskOnFailedTests: true
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish code coverage results for Python $(python.version)'
+      condition: eq(variables['python.version'], '3.8')
+      inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'

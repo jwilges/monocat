@@ -1,16 +1,16 @@
 .vscode
 .nox
 
+.mypy_cache
 .pytest_cache
 
 /.coverage
 /coverage-html
 /coverage.xml
 
-/.mypy_cache
-
 /docs/_build
 
+/.eggs
 /build
 /dist
 /instance

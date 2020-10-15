@@ -13,6 +13,7 @@ def add_proxy_arguments(argument: str) -> Sequence[str]:
         return f'{argument} {" ".join(sys.argv[sys.argv.index(_PROXY_SEPARATOR) + 1:])}'
     return argument
 
+
 @task
 def bandit(context):
     excluded_paths = ','.join(('*/tests/*', ))
