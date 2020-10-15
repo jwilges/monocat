@@ -1,6 +1,5 @@
 import urllib3
 
-
 class ContentType:
     def __str__(self) -> str: ...
     def charset(self, default: str = 'UTF-8') -> str: ...

@@ -1,10 +1,8 @@
 import codecs
-import distutils
 import re
-import subprocess
 import sys
 from pathlib import Path
-from typing import List, MutableMapping, Optional, Sequence, Type
+from typing import Any, List, MutableMapping, Optional, Sequence, Tuple, Type
 
 import setuptools
 
@@ -51,14 +49,51 @@ except ImportError:
     pass
 
 
-class ValidateTagCommand(distutils.cmd.Command):
+class ValidateTagCommand(setuptools.Command):
     """A validator that ensures the package version both is in the canonical form per
     PEP-440 and matches the current git tag"""
     description = 'validate that the package version matches the current git tag'
-    user_options: List[Optional[str]] = []
+    user_options: List[Tuple[str, Optional[str], str]] = [
+        ('output-azure-variables', None, 'Output Azure Pipeline version variables'),
+    ]
+
+    VERSION_PATTERN = r'''
+        v?
+        (?:
+            (?:(?P<epoch>[0-9]+)!)?                           # epoch
+            (?P<release>[0-9]+(?:\.[0-9]+)*)                  # release segment
+            (?P<pre>                                          # pre-release
+                [-_\.]?
+                (?P<pre_l>(a|b|c|rc|alpha|beta|pre|preview))
+                [-_\.]?
+                (?P<pre_n>[0-9]+)?
+            )?
+            (?P<post>                                         # post release
+                (?:-(?P<post_n1>[0-9]+))
+                |
+                (?:
+                    [-_\.]?
+                    (?P<post_l>post|rev|r)
+                    [-_\.]?
+                    (?P<post_n2>[0-9]+)?
+                )
+            )?
+            (?P<dev>                                          # dev release
+                [-_\.]?
+                (?P<dev_l>dev)
+                [-_\.]?
+                (?P<dev_n>[0-9]+)?
+            )?
+        )
+        (?:\+(?P<local>[a-z0-9]+(?:[-_\.][a-z0-9]+)*))?       # local version
+    '''
+    VERSION_FORMAT = re.compile(
+        r'^\s*' + VERSION_PATTERN + r'\s*$',
+        re.VERBOSE | re.IGNORECASE,
+    )
 
     def initialize_options(self):
-        pass
+        self.output_azure_variables = False
 
     def finalize_options(self):
         pass
@@ -67,22 +102,26 @@ class ValidateTagCommand(distutils.cmd.Command):
         """Warn and exit if the package version either:
             a) is not in the canonical format per PEP-440 or,
             b) does not match any HEAD git tag version."""
-        git_tag_process = subprocess.run(['git', 'tag', '--list', '--points-at', 'HEAD'],
-                                         check=False, capture_output=True, universal_newlines=True)
+        import setuptools_scm
+        version = setuptools_scm.get_version(relative_to=Path(__file__))
 
-        if git_tag_process.returncode != 0:
-            self.warn(f'failed to execute `git tag` command')
-            sys.exit(git_tag_process.returncode)
-
-        git_tags = [tag.strip().lstrip('v') for tag in git_tag_process.stdout.splitlines()]
-        version = METADATA['version']
-        if version not in git_tags:
-            self.warn(f'package version ({version}) does not match any HEAD git tag version (tag versions: {git_tags})')
-            sys.exit(1)
+        if self.output_azure_variables:
+            print(f'##vso[task.setvariable variable=is_prerelease;isOutput=true;]{self.is_prerelease(version)!s}')
 
         if not self.is_canonical(version):
             self.warn(f'package version ({version}) is not in the canonical format per PEP-440')
             sys.exit(1)
+
+    @classmethod
+    def is_prerelease(cls, version: str) -> bool:
+        version_match = cls.VERSION_FORMAT.match(version)
+        return (
+            version_match is None or
+            any(
+                value for key, value in version_match.groupdict().items()
+                if key in ('pre', 'dev', 'local')
+            )
+        )
 
     @staticmethod
     def is_canonical(version: str) -> bool:

@@ -8,5 +8,6 @@ omit =
     */.nox/*
     */.local/*
     tests/*
+    monocat/__metadata__.py
 [html]
 directory = coverage-html
