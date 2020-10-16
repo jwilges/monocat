@@ -1,0 +1,22 @@
+trigger:
+- master
+- feature/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: A
+  steps:
+  - script: |
+      echo '##vso[task.setvariable variable=is_prerelease;isOutput=true;]True'
+    displayName: 'Save output variables'
+- job: B
+  dependsOn: A
+  variables:
+    is_prerelease: $[ dependencies.A.outputs['A.is_prerelease'] ]
+  steps:
+  - script: |
+      echo '1: $is_prerelease'
+      echo '2: $(is_prerelease)'
+    displayName: 'Read variables'
