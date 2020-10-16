@@ -9,14 +9,27 @@ jobs:
 - job: A
   steps:
   - script: |
-      echo '##vso[task.setvariable variable=is_prerelease;isOutput=true;]True'
+      echo "##vso[task.setvariable variable=is_prerelease;isOutput=true;]true"
+    name: tag
     displayName: 'Save output variables'
+  - script: |
+      echo '0: $is_prerelease'
+      echo '1: $IS_PRERELEASE'
+      echo '2: $(is_prerelease)'
+      echo '-----'
+      echo '3: $(tag.is_prerelease)'
+    displayName: 'Read output variables'
 - job: B
   dependsOn: A
   variables:
-    is_prerelease: $[ dependencies.A.outputs['A.is_prerelease'] ]
+    is_prerelease: $[ dependencies.A.outputs['tag.is_prerelease'] ]
   steps:
   - script: |
-      echo '1: $is_prerelease'
+      echo '0: $is_prerelease'
+      echo '1: $IS_PRERELEASE'
       echo '2: $(is_prerelease)'
-    displayName: 'Read variables'
+    displayName: 'Read output variables'
+  - script: |
+      echo "conditional run for prerelease"
+    condition: variables.is_prerelease
+    displayName: 'Conditional 0'
