@@ -6,4 +6,4 @@
 #
 pydantic==1.6.1           # via monocat (setup.py)
 uritemplate==3.0.1        # via monocat (setup.py)
-urllib3==1.25.10          # via monocat (setup.py)
+urllib3==1.26.5          # via monocat (setup.py)
