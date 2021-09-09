@@ -15,8 +15,7 @@
 			"**/__pycache__": true,
 			"**/*.py[cdo]": true
 		},
-		"python.venvPath": "${workspaceFolder}/.nox",
-		"python.pythonPath": "${workspaceFolder}/.nox/dev-3-8",
+		"python.defaultInterpreterPath": "${workspaceFolder}/.nox/dev-3-9",
 		"python.workspaceSymbols.enabled": true,
 		"python.linting.enabled": true,
 		"python.linting.pylintEnabled": false,

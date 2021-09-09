@@ -19,7 +19,7 @@
 This utility aims to make integrating GitHub release steps in CI/CD pipelines simple.
 
 ## Supported Platforms
-This utility is continuously unit tested on a GNU/Linux system with Python 3.6, 3.7, and 3.8.
+This utility is continuously unit tested on a GNU/Linux system with Python 3.6 through 3.9.
 
 ## Usage
 Use the `GITHUB_API` environment variable to specify alternate GitHub API URLs;
